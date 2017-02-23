@@ -69,7 +69,7 @@ String  strImgPath;
 public void saveBitmap(Bitmap bm) {
 		//Log.e(TAG, "����ͼƬ");
 		String picName = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + ".jpg";//��Ƭ����
-		//
+		//ͼƬ�洢�ļ���
 		strImgPath = Environment.getExternalStorageDirectory().toString() + "/1_camera/";   
 		File f = new File(strImgPath);
 		if (!f.exists()) {
@@ -83,7 +83,7 @@ public void saveBitmap(Bitmap bm) {
 	    bm.compress(Bitmap.CompressFormat.PNG, 90, out);
 	    out.flush();
 	    out.close();
-	   // 
+	   // Log.i(TAG, "�Ѿ�����");
 	   } catch (FileNotFoundException e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
