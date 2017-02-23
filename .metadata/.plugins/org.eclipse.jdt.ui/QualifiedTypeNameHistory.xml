@@ -1,2 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<qualifiedTypeNameHistroy/>
+<qualifiedTypeNameHistroy>
+<fullyQualifiedTypeName name="com.imotor.BtPic.camera.Bluetooth"/>
+<fullyQualifiedTypeName name="android.content.Intent"/>
+<fullyQualifiedTypeName name="com.imotor.BtPic.camera.ShowCamera"/>
+<fullyQualifiedTypeName name="com.imotor.BtPic.camera.BluetoothActivity"/>
+<fullyQualifiedTypeName name="com.imotor.BtPic.camera.MainActivity"/>
+</qualifiedTypeNameHistroy>

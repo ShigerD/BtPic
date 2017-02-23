@@ -1,0 +1,341 @@
+package  com.imotor.BtPic.camera;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.UUID;
+
+import android.app.Activity;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.Looper;
+import android.os.Message;
+import android.util.Log;
+import android.widget.Toast;
+
+
+public class Bluetooth {
+	protected static final String ACTIVITY_TAG="MyLogTest";
+	
+	public static Boolean isconnected = false;
+	private static String Address = "10:14:05:26:09:72";
+	private static final UUID myUUID = UUID
+			.fromString("00001101-0000-1000-8000-00805F9B34FB");
+	private HandlerThread receive = null;
+	private ReceiveHandler receiveHandler = null;
+	private Connected mreceive = null;
+	public static BluetoothSocket mSocket = null;
+	private static OutputStream mOutputStream = null;
+	private static InputStream mInputStream = null;
+    //private Handler handler = null;
+    private Receive bt_receive = null;
+    /*
+     * 
+     */
+	public int makehello()
+	{
+		//Toast.makeText(this, "Hello", Toast.LENGTH_SHORT).show();
+		return 1;
+	}
+    /*
+     * 
+     */
+	public void connect2Bt()
+	{
+		try {
+			Connectblue();
+			
+		//	tv.setText("BlueTooth Connected");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+        // /* ���������߳� */
+        try {
+           
+            receive = new HandlerThread("Bt_Receive");
+            receive.start();
+            receiveHandler = new ReceiveHandler(receive.getLooper());
+			bt_receive = new Receive(mSocket);
+	        bt_receive.start();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}/* ���������߳� */
+	}
+
+
+    /**
+	 * @��д�ˣ���ΰ
+	 * @���ܣ��������������豸
+	 * @����ֵ����
+	 * @����ֵ����
+	 */
+	public   String btNameAdress="Hi";
+	public   BluetoothDevice device2disp;
+	public  BroadcastReceiver Searchblue() {
+
+		final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
+		// ��ʼ����
+		mAdapter.startDiscovery();
+
+		BroadcastReceiver mReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				// TODO Auto-generated method stub
+				String action = intent.getAction();
+				// �ҵ��豸
+				if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+					BluetoothDevice device = intent
+							.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+
+					Address = device.getAddress();
+					device2disp=device;
+					btNameAdress=device.getName() + "\n" + device.getAddress();
+					//Toast.makeText(this,device.getName() + "\n" + device.getAddress(),Toast.LENGTH_SHORT).show();
+					mAdapter.cancelDiscovery();
+
+					if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+
+					}
+				} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED
+						.equals(action)) {
+
+				
+				}
+			}
+		};
+	//	Toast.makeText(this,device2disp.getName() + "\n" + device2disp.getAddress(),Toast.LENGTH_SHORT).show();
+	//	Toast.makeText(this, "�����豸����", Toast.LENGTH_SHORT).show();
+	//	IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+	//	IntentFilter filter2 = new IntentFilter(
+	//			BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+	// %c	registerReceiver(mReceiver, filter);
+	//	registerReceiver(mReceiver, filter2);
+		return mReceiver;
+	}   
+	/**
+	 * @throws IOException
+	 * @��д�ˣ���ΰ
+	 * @���ܣ����������豸
+	 * @����ֵ����
+	 * @����ֵ����
+	 */
+	public void Connectblue() throws IOException {
+		
+		BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
+		BluetoothDevice mDevice = mAdapter.getRemoteDevice(Address);
+		try {
+			mSocket = mDevice.createRfcommSocketToServiceRecord(myUUID);
+			Log.d("socket", "Connecting!!!");
+		} catch (IOException e) {
+			e.printStackTrace();
+			Log.d("socket", "Connection failed...\n");
+		}
+		/* �ر����� */
+		mAdapter.cancelDiscovery();
+		/* ��ʼ�����豸 */
+		try {
+			mSocket.connect();
+			Log.d("socket", "Connection complete!!\n");
+		//	Toast.makeText(this, "�������", Toast.LENGTH_SHORT).show();
+			isconnected = true;
+
+			/* ���������߳� */
+			receive = new HandlerThread("Bt_Receive");
+			receive.start();
+			receiveHandler = new ReceiveHandler(receive.getLooper());
+
+			mreceive = new Connected(mSocket);
+			mreceive.start();
+
+		} catch (IOException e) {
+			try {
+				mSocket.close();
+				Log.d("socket",
+						"Connection failed... and then close bt_socket...\n");
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			e.printStackTrace();
+	//		Toast.makeText(this, "����ʧ��������", Toast.LENGTH_SHORT).show();
+		}
+	}
+	/**
+	 * �������
+	 */
+	public static int GetBuffer() {
+
+		int bytes = 0; // bytes returned from read()
+		String getString=null;
+		try {
+			mInputStream = mSocket.getInputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		try {
+			bytes = mInputStream.read();
+			getString=mInputStream.toString();
+	    	Log.e("StringFromBluetooth",getString);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return bytes;
+
+	}
+	/*
+	 * 
+	 */
+	public static void SendBuffer(char buffer) {
+		try {
+			mOutputStream = mSocket.getOutputStream();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		try {
+			mOutputStream.write(buffer);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	/*
+	 * 
+	 */
+	public void sendString() {
+		char buf[] = { 0xAA, 0xAF, 0x00, 0x00, 0x00, 0xAA, 0XAF };
+        String etContent;
+        etContent= BluetoothActivity.et.getText().toString();
+        buf=etContent.toCharArray();
+		//EditText settime = (EditText) this.findViewById(R.id.time);
+		//EditText temperature = (EditText) this.findViewById(R.id.temperature);
+		//int time = Integer.parseInt(settime.getText().toString());
+		//int Temp = Integer.parseInt(temperature.getText().toString());
+		
+		//buf[2] = (char) (time / 100);
+		//buf[3] = (char) (time % 100);
+		//buf[4] = (char) (Temp);
+        SendBuffer('O');
+        SendBuffer('K');
+		for (int i = 0; i<buf.length; i++) {
+			SendBuffer(buf[i]);
+		}
+	}
+
+	/**
+	 * �����µ���
+	 */
+	public class Connected extends Thread {
+
+		final BluetoothSocket m_socket;
+		final InputStream ips;
+
+		public Connected(BluetoothSocket Bt_Socket) throws IOException {
+			m_socket = Bt_Socket;
+			InputStream tmpIn;
+			tmpIn = m_socket.getInputStream();
+			ips = tmpIn;
+		}
+	}
+/*
+ * 
+ */
+	   //���������ݵı���
+    int size=100;
+    char[] Receive_Data=new char[size] ;
+    char rece_Flag=0;
+    char rec_char1=0,rec_char2=0,rec_char3=0,rec_char4=0;
+	public class Receive extends Thread {
+
+	    private final BluetoothSocket m_socket;
+	    private final InputStream ips;
+	    public Receive(BluetoothSocket Bt_Socket) throws IOException {
+	        m_socket = Bt_Socket;
+	        InputStream tmpIn;
+	        tmpIn = m_socket.getInputStream();
+	        ips = tmpIn;
+	    }
+
+	    @Override
+	    public void run(){
+	        int bytes;//����������յ������
+	        while (true){
+	            Message msg = receiveHandler.obtainMessage();
+	            String message = "";
+	            try {
+	                 bytes = ips.read();//��������ȡ һ��ֻ��ȡһ��int�ֽ�
+	                 Receive_Data[rece_Flag] = (char) bytes;
+	                 if(rece_Flag==0 && Receive_Data[0] == 0xaa)		rece_Flag=1;
+		               	else if(rece_Flag==1)  							rece_Flag=2;
+		               	else if(rece_Flag==2)							rece_Flag=3;
+		               	else if(rece_Flag==3)							rece_Flag=4;
+		               	else if(rece_Flag==4)							rece_Flag=5;	                 
+		               	else if(rece_Flag==5 && Receive_Data[5] == 0xae)
+		               	{
+		               		rece_Flag	=	0;
+		               		rec_char1	=	Receive_Data[1];
+		               		rec_char2	=	Receive_Data[2];
+		               		rec_char3	=	Receive_Data[3];
+		               		rec_char4	=	Receive_Data[4];
+		               		message 	+=   rec_char1;
+		               		message 	+=   rec_char2;
+		               		//message     +=   '.';
+		               		message		+=   rec_char3;
+		               		message		+=   rec_char4;
+		               		msg.obj = message;
+		              		msg.arg1= 5;
+		                    receiveHandler.sendMessage(msg);
+		               	}
+		               	else
+		               	{
+		               		rece_Flag=0;
+		               	} 
+		                }catch (IOException e) {
+		                   e.printStackTrace();
+		                   break;
+		               }
+	        }
+	    }
+	}
+	/*
+	 * �����߳�
+	 */
+	String msg_received = null;
+	char[] mydata=new char[size] ;
+	public class ReceiveHandler extends Handler{
+		//���캯��
+	    public ReceiveHandler(Looper looper){
+	        super(looper);
+	    }
+	    @Override
+	    public void handleMessage(Message msg) {
+	        Runnable runnable_ui = new Runnable() {
+	           
+	            public void run() {
+	                BluetoothActivity.tv.setText(msg_received); //���յ�����ݸ���
+	                mydata=msg_received.toCharArray();
+	                if(mydata[0]==0x31)
+	                {
+	                	BluetoothActivity.tv.setText("��ʼ����"); 
+	                }    	
+	                else 
+	                {
+	                	BluetoothActivity.tv.setText("stop����"); 
+	                }
+	            }
+	        };
+	        msg_received = msg.obj.toString();          
+	        BluetoothActivity.handler.post(runnable_ui);           
+	    }
+	}
+}

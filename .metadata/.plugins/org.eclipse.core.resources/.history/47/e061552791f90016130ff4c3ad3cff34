@@ -1,0 +1,6 @@
+package com.imotor.BtPic.camera;
+import java.io.IOException;
+
+public class BluetoothActivity extends Activity {
+	
+}
